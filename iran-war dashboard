@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>120 Days of Whiplash — Trump's Iran War Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.12.7/Recharts.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0a0a0a; color: #f5f5f5; font-family: Georgia, serif; }
+  ::-webkit-scrollbar { width: 6px; } 
+  ::-webkit-scrollbar-track { background: #111; }
+  ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState } = React;
+const {
+  ComposedChart, Area, XAxis, YAxis, CartesianGrid,
+  Tooltip, ResponsiveContainer, ReferenceLine
+} = Recharts;
+
+const events = [
+  { date:"Feb 28", dateIndex:0,  type:"escalate", label:"Operation Epic Fury begins",                      quote:"The United States military began major combat operations in Iran.",                                                          oil:80,  gas:3.05, sp500:5850 },
+  { date:"Mar 1",  dateIndex:1,  type:"cost",      label:"7 Americans killed in Saudi Arabia",               quote:"Iranian strikes hit Prince Sultan Air Base. 6 Army reservists dead.",                                                      oil:83,  gas:3.15, sp500:5720 },
+  { date:"Mar 5",  dateIndex:2,  type:"economic",  label:"Brent crude +15%, gas +7.5%",                     quote:"Strait of Hormuz effectively closed. ~200 ships stranded.",                                                               oil:83,  gas:3.20, sp500:5680 },
+  { date:"Mar 6",  dateIndex:3,  type:"escalate",  label:"Trump demands unconditional surrender",            quote:"Only Iran's unconditional surrender will be acceptable.",                                                                  oil:95,  gas:3.35, sp500:5600 },
+  { date:"Mar 9",  dateIndex:4,  type:"economic",  label:'Oil hits $120/barrel',                            quote:"Trump calls $120 oil 'a small price to pay' for defeating Iran.",                                                          oil:120, gas:3.55, sp500:5540 },
+  { date:"Mar 12", dateIndex:5,  type:"cost",      label:"KC-135 crashes, 6 Air Force crew killed",         quote:"Refueling aircraft lost in western Iraq. Pentagon classifies it non-hostile.",                                             oil:110, gas:3.65, sp500:5490 },
+  { date:"Mar 21", dateIndex:6,  type:"chicken",   label:"Deadline #1 — passes with nothing",               quote:"Trump's first hard deadline for Iran expires. No action taken.",                                                           oil:105, gas:3.75, sp500:5510 },
+  { date:"Mar 23", dateIndex:7,  type:"chicken",   label:"Deadline #2 — $580M oil bet before reversal",     quote:"Trump postpones again. $580M in suspicious oil futures sold minutes before announcement.",                                  oil:98,  gas:3.80, sp500:5560 },
+  { date:"Mar 30", dateIndex:8,  type:"economic",  label:"Gas crosses $4/gallon nationally",                quote:"National average hits $4 for first time since 2022. California hits $6 in 7 counties.",                                    oil:112, gas:4.00, sp500:5420 },
+  { date:"Apr 5",  dateIndex:9,  type:"escalate",  label:"Trump threatens to bomb power plants",            quote:"48 hours to open Hormuz or we destroy your power grid.",                                                                   oil:115, gas:4.10, sp500:5380 },
+  { date:"Apr 7",  dateIndex:10, type:"escalate",  label:'"A whole civilization will die tonight"',         quote:"Trump posts the threat. White House later confirms it was improvised — not a real military plan.",                           oil:112, gas:4.15, sp500:5350 },
+  { date:"Apr 8",  dateIndex:11, type:"chicken",   label:"Ceasefire #1 — $950M bet placed before deal",    quote:"Pakistan brokers ceasefire hours before Trump's deadline. $950M in suspicious futures bets placed first.",                   oil:95,  gas:4.05, sp500:5580 },
+  { date:"Apr 17", dateIndex:12, type:"chicken",   label:"$750M bet before Iran's Hormuz announcement",    quote:"Third round of suspicious oil futures sold 20 minutes before Iran's foreign minister announces Hormuz is open.",             oil:88,  gas:3.90, sp500:5780 },
+  { date:"May 1",  dateIndex:13, type:"economic",  label:'S&P 500 hits record — the "TACO trade"',         quote:"Wall Street names it: Trump Always Chickens Out. S&P 500 touches 7,230 while Americans are still dying.",                   oil:104, gas:4.40, sp500:7230 },
+  { date:"May 26", dateIndex:14, type:"cost",      label:"S&P fully recovers. 15 dead, 543 wounded.",      quote:"Markets erase all war losses. Meanwhile 15 Americans are dead and 543 wounded — many with traumatic brain injuries.",        oil:95,  gas:4.20, sp500:7473 },
+  { date:"Jun 17", dateIndex:15, type:"chicken",   label:"Trump signs MOU at Versailles over dinner",      quote:'"This was not easy," Trump says, pausing before signing. Iran\'s nuclear program still unresolved.',                         oil:85,  gas:3.80, sp500:7500 },
+  { date:"Jun 26", dateIndex:16, type:"escalate",  label:"US strikes Iran again — ceasefire collapses",    quote:"3rd tanker attacked in a week. US strikes Iran for second consecutive night.",                                               oil:90,  gas:3.90, sp500:7480 },
+  { date:"Jun 28", dateIndex:17, type:"escalate",  label:"Iran fires missiles at US bases — TODAY",        quote:"Iran strikes Kuwait and Bahrain. Trump threatens to 'finish the job.' Nothing is resolved.",                                 oil:93,  gas:3.95, sp500:7460 },
+];
+
+const typeConfig = {
+  escalate: { color:"#ef4444", label:"↑ Escalation",          bg:"rgba(69,10,10,0.6)"  },
+  chicken:  { color:"#f59e0b", label:"↓ Trump Backs Down",     bg:"rgba(69,26,3,0.6)"   },
+  economic: { color:"#60a5fa", label:"$ Economic Hit",         bg:"rgba(12,26,58,0.6)"  },
+  cost:     { color:"#a78bfa", label:"☠ Human Cost",           bg:"rgba(46,16,101,0.6)" },
+};
+
+const CustomDot = ({ cx, cy, payload }) => {
+  if (!payload || !cx || !cy) return null;
+  const cfg = typeConfig[payload.type];
+  return <circle cx={cx} cy={cy} r={5} fill={cfg.color} stroke="#0a0a0a" strokeWidth={2} />;
+};
+
+const CustomTooltip = ({ active, payload }) => {
+  if (!active || !payload?.length) return null;
+  const e = payload[0].payload;
+  const cfg = typeConfig[e.type];
+  return (
+    <div style={{background:"#111",border:`1px solid ${cfg.color}`,borderRadius:4,padding:"12px 16px",maxWidth:280,fontFamily:"Georgia,serif"}}>
+      <div style={{color:cfg.color,fontSize:11,fontFamily:"monospace",marginBottom:4}}>{cfg.label} — {e.date}</div>
+      <div style={{color:"#f5f5f5",fontSize:13,fontWeight:700,marginBottom:6}}>{e.label}</div>
+      <div style={{color:"#999",fontSize:12,lineHeight:1.5,fontStyle:"italic"}}>"{e.quote}"</div>
+      <div style={{marginTop:8,display:"flex",gap:12,flexWrap:"wrap"}}>
+        <span style={{color:"#fbbf24",fontSize:11}}>Oil: ${e.oil}/bbl</span>
+        <span style={{color:"#34d399",fontSize:11}}>Gas: ${e.gas}/gal</span>
+        <span style={{color:"#818cf8",fontSize:11}}>S&P: {e.sp500.toLocaleString()}</span>
+      </div>
+    </div>
+  );
+};
+
+function ChartBlock({ color, label, dataKey, domain, tickFmt, refVal, refLabel, fillColor }) {
+  return (
+    <div style={{marginBottom:24}}>
+      <div style={{fontSize:11,fontFamily:"monospace",color,letterSpacing:2,marginBottom:8,textTransform:"uppercase"}}>{label}</div>
+      <ResponsiveContainer width="100%" height={160}>
+        <ComposedChart data={events} margin={{top:8,right:8,left:0,bottom:0}}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#1a1a1a" />
+          <XAxis dataKey="date" tick={{fill:"#444",fontSize:9,fontFamily:"monospace"}} axisLine={{stroke:"#222"}} tickLine={false} />
+          <YAxis domain={domain} tick={{fill:"#444",fontSize:9,fontFamily:"monospace"}} axisLine={false} tickLine={false} width={44} tickFormatter={tickFmt} />
+          <Tooltip content={<CustomTooltip />} />
+          {refVal && <ReferenceLine y={refVal} stroke="#2a2a2a" strokeDasharray="4 4" label={{value:refLabel,fill:"#333",fontSize:9,fontFamily:"monospace"}} />}
+          <Area type="monotone" dataKey={dataKey} fill={fillColor} stroke={color} strokeWidth={2} dot={<CustomDot />} activeDot={{r:7,fill:color,stroke:"#0a0a0a",strokeWidth:2}} />
+        </ComposedChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+function App() {
+  const [activeEvent, setActiveEvent] = useState(null);
+  return (
+    <div style={{background:"#0a0a0a",minHeight:"100vh",fontFamily:"Georgia,serif",color:"#f5f5f5",padding:"32px 20px"}}>
+      <div style={{maxWidth:860,margin:"0 auto"}}>
+
+        {/* Header */}
+        <div style={{fontFamily:"monospace",fontSize:11,color:"#ef4444",letterSpacing:3,textTransform:"uppercase",marginBottom:10}}>
+          Feb 28 – Jun 28, 2026 · Operation Epic Fury
+        </div>
+        <h1 style={{fontSize:"clamp(24px,5vw,42px)",fontWeight:700,lineHeight:1.1,marginBottom:8}}>
+          120 Days of Whiplash
+        </h1>
+        <p style={{color:"#777",fontSize:14,lineHeight:1.7,maxWidth:580,marginBottom:28}}>
+          Every escalation. Every reversal. Every price spike. Every American casualty — mapped against oil, gas, and the stock market. Hover any point to see what Trump said and what it cost.
+        </p>
+
+        {/* Legend */}
+        <div style={{display:"flex",flexWrap:"wrap",gap:16,marginBottom:32}}>
+          {Object.entries(typeConfig).map(([k,cfg]) => (
+            <div key={k} style={{display:"flex",alignItems:"center",gap:6}}>
+              <div style={{width:9,height:9,borderRadius:"50%",background:cfg.color,flexShrink:0}} />
+              <span style={{fontSize:11,color:"#666",fontFamily:"monospace"}}>{cfg.label}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Charts */}
+        <ChartBlock color="#fbbf24" label="Brent Crude Oil — $ per barrel" dataKey="oil"   domain={[70,135]}  tickFmt={v=>`$${v}`}           refVal={100}  refLabel="$100/bbl" fillColor="rgba(69,26,3,0.4)"   />
+        <ChartBlock color="#34d399" label="US Avg Gas Price — $ per gallon"  dataKey="gas"   domain={[2.8,4.8]} tickFmt={v=>`$${v.toFixed(2)}`} refVal={4.0}  refLabel="$4.00"    fillColor="rgba(5,46,22,0.4)"   />
+        <ChartBlock color="#818cf8" label='S&P 500 — Wall Street bets on "TACO"' dataKey="sp500" domain={[5100,7800]} tickFmt={v=>v.toLocaleString()} refVal={null} refLabel={null}  fillColor="rgba(30,27,75,0.4)"  />
+
+        {/* Event Log */}
+        <div style={{borderTop:"1px solid #1a1a1a",paddingTop:24,marginTop:8}}>
+          <div style={{fontFamily:"monospace",fontSize:11,color:"#444",letterSpacing:2,marginBottom:16,textTransform:"uppercase"}}>
+            Full Event Log — hover to expand
+          </div>
+          {events.map((e,i) => {
+            const cfg = typeConfig[e.type];
+            const isActive = activeEvent?.date === e.date;
+            return (
+              <div key={i}
+                style={{display:"flex",gap:12,alignItems:"flex-start",padding:"9px 10px",borderRadius:4,background:isActive?cfg.bg:"transparent",transition:"background 0.15s",cursor:"default",marginBottom:1}}
+                onMouseEnter={()=>setActiveEvent(e)}
+                onMouseLeave={()=>setActiveEvent(null)}
+              >
+                <span style={{fontFamily:"monospace",fontSize:11,color:"#444",minWidth:46,paddingTop:2,flexShrink:0}}>{e.date}</span>
+                <div style={{width:8,height:8,borderRadius:"50%",background:cfg.color,marginTop:4,flexShrink:0}} />
+                <div style={{flex:1}}>
+                  <div style={{fontSize:13,color:isActive?"#f5f5f5":"#bbb",lineHeight:1.4}}>{e.label}</div>
+                  {isActive && (
+                    <div style={{fontSize:12,color:"#888",fontStyle:"italic",marginTop:5,lineHeight:1.6}}>"{e.quote}"</div>
+                  )}
+                </div>
+                <span style={{fontFamily:"monospace",fontSize:10,color:cfg.color,paddingTop:3,whiteSpace:"nowrap",flexShrink:0}}>{cfg.label}</span>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Footer */}
+        <div style={{marginTop:32,paddingTop:16,borderTop:"1px solid #1a1a1a",fontSize:11,color:"#2a2a2a",fontFamily:"monospace",lineHeight:1.8}}>
+          Sources: CENTCOM · Wikipedia · NPR · CNBC · Al Jazeera · TIME · Charles Schwab · IranWarLive · Military Times · The Intercept
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
